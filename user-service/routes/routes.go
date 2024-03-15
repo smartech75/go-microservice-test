@@ -10,4 +10,6 @@ func Routes(router *gin.Engine) {
 
 	router.GET("/api/v1/userservice/test", controllers.Test)
 
+	router.GET("/api/v1/userservice/user/:id", controllers.GetUserByID)
+
 }
