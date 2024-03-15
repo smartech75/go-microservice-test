@@ -24,5 +24,4 @@ func IsAuthorized(next gin.HandlerFunc) gin.HandlerFunc {
 
 		handlers.AuthorizationResponse("Admin Permission Required", c.Writer)
 	}
-
 }
