@@ -11,7 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
-	middlewares "github.com/smartech75/go-microservice-test/user-service/handlers"
+	"github.com/smartech75/go-microservice-test/user-service/handlers"
 )
 
 var client *mongo.Client
@@ -34,7 +34,7 @@ func DotEnvVariable(key string) string {
 func Dbconnect() *mongo.Client {
 
 	// // Mongodb connect for local server
-	clientOptions := options.Client().ApplyURI(middlewares.DotEnvVariable("MONGO_URL"))
+	clientOptions := options.Client().ApplyURI(handlers.DotEnvVariable("MONGO_URL"))
 
 	client, err := mongo.Connect(context.TODO(), clientOptions)
 	if err != nil {

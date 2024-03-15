@@ -7,8 +7,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/smartech75/go-microservice-test/user-service/db"
-	middlewares "github.com/smartech75/go-microservice-test/user-service/handlers"
+	"github.com/smartech75/go-microservice-test/user-service/handlers"
 	"github.com/smartech75/go-microservice-test/user-service/models"
+	"github.com/smartech75/go-microservice-test/user-service/validators"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -16,7 +17,7 @@ import (
 var client = db.Dbconnect()
 
 var Test = gin.HandlerFunc(func(c *gin.Context) {
-	middlewares.SuccessMessageResponse("Congratulations... It's working.", c.Writer)
+	handlers.SuccessMessageResponse("Congratulations... It's working.", c.Writer)
 })
 
 var GetUserByID = gin.HandlerFunc(func(c *gin.Context) {
@@ -24,7 +25,7 @@ var GetUserByID = gin.HandlerFunc(func(c *gin.Context) {
 	id := c.Param("id")
 	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		middlewares.ErrorResponse("Invalid User ID", c.Writer)
+		handlers.ErrorResponse("Invalid User ID", c.Writer)
 		return
 	}
 
@@ -32,18 +33,23 @@ var GetUserByID = gin.HandlerFunc(func(c *gin.Context) {
 	collection := client.Database("userservice").Collection("users")
 	err = collection.FindOne(context.Background(), bson.D{primitive.E{Key: "_id", Value: objID}}).Decode(&user)
 	if err != nil {
-		middlewares.ErrorResponse("User does not exist", c.Writer)
+		handlers.ErrorResponse("User does not exist", c.Writer)
 		return
 	}
 
-	middlewares.SuccessItemRespond(user, "User", c.Writer)
+	handlers.SuccessItemRespond(user, "User", c.Writer)
 })
 
 func AddNewUser(c *gin.Context) {
 	var user models.User
 	err := c.BindJSON(&user)
 	if err != nil { //Bad Request
-		middlewares.ServerErrResponse(err.Error(), c.Writer)
+		handlers.ServerErrResponse(err.Error(), c.Writer)
+		return
+	}
+
+	if ok, errors := validators.ValidateInputs(user); !ok {
+		handlers.ValidationResponse(errors, c.Writer)
 		return
 	}
 
@@ -55,23 +61,23 @@ func AddNewUser(c *gin.Context) {
 
 	err = collection.FindOne(context.Background(), bson.D{primitive.E{Key: "username", Value: user.Username}}).Decode(&ex_user)
 	if err == nil {
-		middlewares.ErrorResponse("User already exist with the username", c.Writer)
+		handlers.ErrorResponse("User already exist with the username", c.Writer)
 		return
 	}
 
 	err = collection.FindOne(context.Background(), bson.D{primitive.E{Key: "email", Value: user.Email}}).Decode(&ex_user)
 	if err == nil {
-		middlewares.ErrorResponse("User already exist with the email", c.Writer)
+		handlers.ErrorResponse("User already exist with the email", c.Writer)
 		return
 	}
 
 	result, err := collection.InsertOne(context.TODO(), user)
 	if err != nil {
-		middlewares.ServerErrResponse(err.Error(), c.Writer)
+		handlers.ServerErrResponse(err.Error(), c.Writer)
 		return
 	}
 	res, _ := json.Marshal(result.InsertedID)
-	middlewares.SuccessMessageResponse(`Inserted new user at `+strings.Replace(string(res), `"`, ``, 2), c.Writer)
+	handlers.SuccessMessageResponse(`Inserted new user at `+strings.Replace(string(res), `"`, ``, 2), c.Writer)
 }
 
 var DeleteUser = gin.HandlerFunc(func(c *gin.Context) {
@@ -81,13 +87,27 @@ var DeleteUser = gin.HandlerFunc(func(c *gin.Context) {
 	collection := client.Database("userservice").Collection("users")
 	err := collection.FindOne(context.TODO(), bson.D{primitive.E{Key: "_id", Value: id}}).Decode(&user)
 	if err != nil {
-		middlewares.ErrorResponse("User does not exist", c.Writer)
+		handlers.ErrorResponse("User does not exist", c.Writer)
 		return
 	}
 	_, err = collection.DeleteOne(context.TODO(), bson.D{primitive.E{Key: "_id", Value: id}})
 	if err != nil {
-		middlewares.ServerErrResponse(err.Error(), c.Writer)
+		handlers.ServerErrResponse(err.Error(), c.Writer)
 		return
 	}
-	middlewares.SuccessMessageResponse("Deleted", c.Writer)
+	handlers.SuccessMessageResponse("Deleted", c.Writer)
 })
+
+func IsAdmin(userid string) (bool, error) {
+
+	id, _ := primitive.ObjectIDFromHex(userid)
+
+	var user models.User
+	collection := client.Database("userservice").Collection("users")
+	err := collection.FindOne(context.TODO(), bson.D{primitive.E{Key: "_id", Value: id}}).Decode(&user)
+	if err != nil {
+		return false, err
+	}
+
+	return user.Type == "admin", nil
+}

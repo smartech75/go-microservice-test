@@ -2,6 +2,8 @@ module github.com/smartech75/go-microservice-test/user-service
 
 go 1.22.0
 
+replace github.com/smartech75/go-microservice-test/user-service/handlers => ../handlers
+
 replace github.com/smartech75/go-microservice-test/user-service/controllers => ../controllers
 
 replace github.com/smartech75/go-microservice-test/user-service/db => ../db
@@ -20,6 +22,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/labstack/gommon v0.4.2
 	go.mongodb.org/mongo-driver v1.14.0
+	gopkg.in/go-playground/validator.v9 v9.31.0
 )
 
 require (
@@ -55,5 +58,6 @@ require (
 	golang.org/x/sys v0.15.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/protobuf v1.30.0 // indirect
+	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

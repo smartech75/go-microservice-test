@@ -1,4 +1,4 @@
-package middlewares
+package handlers
 
 import (
 	"encoding/json"
@@ -65,5 +65,28 @@ func ServerErrResponse(error string, writer http.ResponseWriter) {
 
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusInternalServerError)
+	json.NewEncoder(writer).Encode(temp)
+}
+
+func ValidationResponse(fields map[string][]string, writer http.ResponseWriter) {
+	//Create a new map and fill it
+	response := make(map[string]interface{})
+	response["data"] = fields
+	response["message"] = "validation error"
+
+	writer.Header().Set("Content-Type", "application/json")
+	writer.WriteHeader(http.StatusUnprocessableEntity)
+	json.NewEncoder(writer).Encode(response)
+}
+
+// AuthorizationResponse -> response authorize
+func AuthorizationResponse(msg string, writer http.ResponseWriter) {
+	type errdata struct {
+		Message string `json:"message"`
+	}
+	temp := &errdata{Message: msg}
+
+	writer.Header().Set("Content-Type", "application/json")
+	writer.WriteHeader(http.StatusUnauthorized)
 	json.NewEncoder(writer).Encode(temp)
 }
